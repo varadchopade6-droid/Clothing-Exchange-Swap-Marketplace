@@ -1,0 +1,11 @@
+import { useState } from 'react';
+import { api } from '../services/api.js';
+import { useAuth } from '../context/AuthContext.jsx';
+
+const initial = { title: '', type: '', brand: '', size: '', condition: 'good', estimatedSwapValue: '', location: '' };
+export default function DashboardPage() {
+  const { user } = useAuth(); const [form, setForm] = useState({ ...initial, location: user.location }); const [message, setMessage] = useState(''); const [error, setError] = useState('');
+  function update(event) { setForm({ ...form, [event.target.name]: event.target.value }); }
+  async function submit(event) { event.preventDefault(); setError(''); setMessage(''); try { await api('/clothing', { method: 'POST', body: JSON.stringify({ ...form, estimatedSwapValue: Number(form.estimatedSwapValue) }) }); setMessage('Your listing is live.'); setForm({ ...initial, location: user.location }); } catch (err) { setError(err.message); } }
+  return <section className="dashboard"><div><p className="eyebrow">Your wardrobe</p><h1>Hello, {user.name}.</h1><p>List an item you’re ready to pass along. Swap requests and messages will appear here in the next stage.</p></div><form className="listing-form" onSubmit={submit}><h2>Add a clothing listing</h2><div className="two-col"><label>Title<input required name="title" value={form.title} onChange={update} placeholder="e.g. Indigo denim jacket" /></label><label>Type<input required name="type" value={form.type} onChange={update} placeholder="Jacket, dress, shoes…" /></label><label>Brand<input required name="brand" value={form.brand} onChange={update} /></label><label>Size<input required name="size" value={form.size} onChange={update} /></label><label>Condition<select name="condition" value={form.condition} onChange={update}><option>new with tags</option><option>like new</option><option>good</option><option>fair</option></select></label><label>Estimated swap value (₹)<input required min="1" type="number" name="estimatedSwapValue" value={form.estimatedSwapValue} onChange={update} /></label></div><label>City / location<input required name="location" value={form.location} onChange={update} /></label>{message && <p className="success">{message}</p>}{error && <p className="error">{error}</p>}<button>Publish listing</button></form></section>;
+}
