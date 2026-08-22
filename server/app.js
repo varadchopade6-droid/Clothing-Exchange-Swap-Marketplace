@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import authRoutes from './routes/authRoutes.js';
 import clothingRoutes from './routes/clothingRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import swapRoutes from './routes/swapRoutes.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 const app = express();
@@ -14,6 +15,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/clothing', clothingRoutes);
+app.use('/api/swaps', swapRoutes);
 app.use(notFound);
 app.use(errorHandler);
 export default app;

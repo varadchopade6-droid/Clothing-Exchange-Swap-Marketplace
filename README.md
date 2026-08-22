@@ -1,6 +1,6 @@
 # ReWear Clothing Exchange Marketplace
 
-Stage 1 foundation for a MERN clothing-swap application. It supports registration, login, JWT-protected profile access, and creating/browsing clothing listings.
+Stage 2 core marketplace for a MERN clothing-swap application. It supports registration, login, JWT-protected profile access, listing management, server-side marketplace filters, and swap requests.
 
 ## Prerequisites
 
@@ -23,6 +23,15 @@ The client runs on `http://localhost:5173`; the API runs on `http://localhost:50
 - `GET /api/users/me` (Bearer token)
 - `GET /api/clothing`
 - `POST /api/clothing` (Bearer token)
+- `GET /api/clothing/mine` (Bearer token)
+- `GET /api/clothing/:id`
+- `PATCH /api/clothing/:id` (owner only)
+- `DELETE /api/clothing/:id` (owner only)
+- `GET /api/swaps` (Bearer token; accepts `direction` and `status` filters)
+- `POST /api/swaps` (Bearer token)
+- `PATCH /api/swaps/:id` (Bearer token; `accept`, `reject`, `cancel`, or `complete`)
+
+`GET /api/clothing` performs filtering on the server. It accepts `search`, `type`, `size`, `condition`, `brand`, `location`, and `status` query parameters.
 
 ## Tests
 
