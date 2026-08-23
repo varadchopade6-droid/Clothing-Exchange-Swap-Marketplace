@@ -1,0 +1,12 @@
+import { useEffect, useState } from 'react';
+import { api } from '../services/api.js';
+import { useAuth } from '../context/AuthContext.jsx';
+export default function ChatPage() {
+  const { user } = useAuth(); const [conversations, setConversations] = useState([]); const [selected, setSelected] = useState(''); const [messages, setMessages] = useState([]); const [text, setText] = useState(''); const [error, setError] = useState('');
+  useEffect(() => { api('/messages/conversations').then((data) => { setConversations(data); if (data[0]) setSelected(data[0]._id); }).catch((err) => setError(err.message)); }, []);
+  const loadMessages = () => selected && api(`/messages/${selected}`).then(setMessages).catch((err) => setError(err.message));
+  useEffect(() => { loadMessages(); const timer = setInterval(loadMessages, 12000); return () => clearInterval(timer); }, [selected]);
+  async function send(event) { event.preventDefault(); try { const message = await api(`/messages/${selected}`, { method: 'POST', body: JSON.stringify({ text }) }); setMessages([...messages, message]); setText(''); } catch (err) { setError(err.message); } }
+  const active = conversations.find((swap) => swap._id === selected);
+  return <section className="chat"><div className="chat-list"><p className="eyebrow">Negotiations</p><h2>Conversations</h2>{conversations.length === 0 && <p>No swap conversations yet.</p>}{conversations.map((swap) => <button className={`conversation ${selected === swap._id ? 'selected' : ''}`} onClick={() => setSelected(swap._id)} key={swap._id}>{swap.offeredItem.title} ↔ {swap.requestedItem.title}<small>{swap.status}</small></button>)}</div><div className="chat-window">{active ? <><div className="chat-context"><h2>{active.offeredItem.title} ↔ {active.requestedItem.title}</h2><p>{active.status} · REST polling every 12 seconds</p></div><div className="messages">{messages.length === 0 && <p>Start the negotiation with a message.</p>}{messages.map((message) => <div className={`message ${message.sender._id === user.id ? 'mine' : ''}`} key={message._id}><b>{message.sender.name}</b><span>{message.text}</span></div>)}</div><form className="message-form" onSubmit={send}><input value={text} maxLength="1000" onChange={(event) => setText(event.target.value)} placeholder="Write a message" /><button>Send</button></form></> : <p className="page-message">Select a swap conversation.</p>}{error && <p className="error">{error}</p>}</div></section>;
+}

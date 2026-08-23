@@ -4,5 +4,5 @@ import { useAuth } from '../context/AuthContext.jsx';
 export default function Layout({ children }) {
   const { user, signOut } = useAuth(); const navigate = useNavigate();
   function logout() { signOut(); navigate('/login'); }
-  return <><header><Link className="brand" to="/">ReWear</Link><nav><NavLink to="/">Listings</NavLink>{user && <><NavLink to="/swaps">Swap requests</NavLink><NavLink to="/dashboard">Dashboard</NavLink></>}{user ? <button className="link-button" onClick={logout}>Log out</button> : <><NavLink to="/login">Log in</NavLink><NavLink className="button small" to="/register">Join ReWear</NavLink></>}</nav></header><main>{children}</main></>;
+  return <><header><Link className="brand" to="/">ReWear</Link><nav><NavLink to="/">Listings</NavLink>{user && <><NavLink to="/swaps">Swap requests</NavLink><NavLink to="/transactions">Transactions</NavLink><NavLink to="/chat">Chat</NavLink><NavLink to="/dashboard">Dashboard</NavLink><NavLink to="/profile">Profile</NavLink>{user.role === 'admin' && <NavLink to="/admin">Admin</NavLink>}</>}{user ? <button className="link-button" onClick={logout}>Log out</button> : <><NavLink to="/login">Log in</NavLink><NavLink className="button small" to="/register">Join ReWear</NavLink></>}</nav></header><main>{children}</main></>;
 }

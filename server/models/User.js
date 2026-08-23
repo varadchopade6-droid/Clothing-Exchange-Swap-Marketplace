@@ -8,7 +8,13 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, minlength: 8, select: false },
     contact: { type: String, trim: true, maxlength: 120 },
     location: { type: String, required: true, trim: true, maxlength: 100 },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' }
+    // `user` is retained for accounts created in earlier stages; new marketplace
+    // accounts use the clearer customer/entrepreneur roles.
+    role: { type: String, enum: ['user', 'customer', 'entrepreneur', 'admin'], default: 'customer' },
+    entrepreneurApproved: { type: Boolean, default: false, index: true },
+    available: { type: Boolean, default: true },
+    skills: [{ type: String, trim: true, maxlength: 80 }],
+    bio: { type: String, trim: true, maxlength: 1200 }
   },
   { timestamps: true }
 );

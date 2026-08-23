@@ -6,7 +6,8 @@ const swapRequestSchema = new mongoose.Schema({
   offeredItem: { type: mongoose.Schema.Types.ObjectId, ref: 'Clothing', required: true },
   requestedItem: { type: mongoose.Schema.Types.ObjectId, ref: 'Clothing', required: true },
   initialMessage: { type: String, trim: true, maxlength: 500 },
-  status: { type: String, enum: ['pending', 'accepted', 'rejected', 'cancelled', 'completed'], default: 'pending', index: true }
+  status: { type: String, enum: ['pending', 'accepted', 'agreed', 'in_progress', 'rejected', 'cancelled', 'completed'], default: 'pending', index: true },
+  agreementConfirmedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
 swapRequestSchema.index({ requester: 1, requestedItem: 1, status: 1 });

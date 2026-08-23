@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { analytics, approveEntrepreneur, categories, commerce, commerceAnalytics, createCategory, deleteCategory, disputes, entrepreneurs, listings, moderateListing, swaps, updateComplaint, updateDispute, users } from '../controllers/adminController.js';
+import { requireAuth } from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/admin.js';
+const router = Router();
+router.use(requireAuth, requireAdmin);
+router.get('/users', users); router.get('/listings', listings); router.patch('/listings/:id/remove', moderateListing); router.get('/swaps', swaps); router.get('/analytics', analytics); router.get('/disputes', disputes); router.patch('/disputes/:id', updateDispute);
+router.get('/entrepreneurs', entrepreneurs); router.patch('/entrepreneurs/:id/approval', approveEntrepreneur);
+router.route('/categories').get(categories).post(createCategory); router.delete('/categories/:id', deleteCategory);
+router.get('/commerce', commerce); router.get('/commerce/analytics', commerceAnalytics); router.patch('/complaints/:id', updateComplaint);
+export default router;

@@ -1,4 +1,5 @@
 import Clothing from '../models/Clothing.js';
+import { calculateValue, compareValues } from '../services/valuation.js';
 
 const fields = ['title', 'type', 'brand', 'size', 'condition', 'estimatedSwapValue', 'location', 'images'];
 
@@ -22,6 +23,17 @@ export async function getClothing(req, res, next) {
     const listing = await Clothing.findById(req.params.id).populate('owner', 'name location');
     if (!listing || listing.status === 'removed') return res.status(404).json({ message: 'Listing not found.' });
     res.json(listing);
+  } catch (error) { next(error); }
+}
+
+export async function calculateListingValue(req, res, next) { try { res.json(calculateValue(req.body)); } catch (error) { error.status = 400; next(error); } }
+export async function suggestions(req, res, next) {
+  try {
+    const source = await Clothing.findById(req.params.id);
+    if (!source || source.status !== 'available') return res.status(404).json({ message: 'Available listing not found.' });
+    const listings = await Clothing.find({ _id: { $ne: source.id }, status: 'available', owner: { $ne: source.owner } }).populate('owner', 'name location').limit(100);
+    const matches = listings.map((listing) => { const value = compareValues(source.estimatedSwapValue, listing.estimatedSwapValue); const sameLocation = listing.location.toLowerCase() === source.location.toLowerCase(); const categoryMatch = listing.type.toLowerCase() === source.type.toLowerCase(); return { listing, score: (value.balance === 'close match' ? 3 : 0) + (sameLocation ? 2 : 0) + (categoryMatch ? 1 : 0), sameLocation, categoryMatch, comparison: value }; }).filter((entry) => entry.score >= 2).sort((a, b) => b.score - a.score).slice(0, 6);
+    res.json(matches);
   } catch (error) { next(error); }
 }
 

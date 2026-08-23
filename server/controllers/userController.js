@@ -1,0 +1,5 @@
+import User from '../models/User.js';
+const publicUser = (user) => ({ id: user.id, name: user.name, email: user.email, contact: user.contact, location: user.location, role: user.role, entrepreneurApproved: user.entrepreneurApproved, available: user.available, skills: user.skills, bio: user.bio });
+export async function me(req, res) { res.json(publicUser(req.user)); }
+export async function updateMe(req, res, next) { try { for (const field of ['name', 'location', 'contact', 'bio', 'skills']) if (req.body[field] !== undefined) req.user[field] = req.body[field]; await req.user.save(); res.json(publicUser(req.user)); } catch (error) { next(error); } }
+export async function updateAvailability(req, res, next) { try { if (req.user.role !== 'entrepreneur') return res.status(403).json({ message: 'Only entrepreneurs can change availability.' }); if (typeof req.body.available !== 'boolean') return res.status(400).json({ message: 'Available must be true or false.' }); req.user.available = req.body.available; await req.user.save(); res.json(publicUser(req.user)); } catch (error) { next(error); } }
