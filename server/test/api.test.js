@@ -38,6 +38,7 @@ test('listing ownership, filters, and swap lifecycle are enforced', async () => 
   await request(app).get('/api/swaps?direction=incoming').set('Authorization', `Bearer ${second.body.token}`).expect(200).expect((response) => assert.equal(response.body.some((swap) => swap._id === created.body._id), true));
   await request(app).patch(`/api/swaps/${created.body._id}`).set('Authorization', `Bearer ${first.body.token}`).send({ action: 'accept' }).expect(400);
   await request(app).patch(`/api/swaps/${created.body._id}`).set('Authorization', `Bearer ${second.body.token}`).send({ action: 'accept' }).expect(200).expect((response) => assert.equal(response.body.status, 'accepted'));
+  await request(app).post('/api/swaps').set('Authorization', `Bearer ${first.body.token}`).send({ offeredItem: offered.body._id, requestedItem: requested.body._id }).expect(400);
   await request(app).patch(`/api/swaps/${created.body._id}`).set('Authorization', `Bearer ${first.body.token}`).send({ action: 'complete' }).expect(200).expect((response) => assert.equal(response.body.status, 'completed'));
   await request(app).delete(`/api/clothing/${requested.body._id}`).set('Authorization', `Bearer ${second.body.token}`).expect(204);
   await request(app).get(`/api/clothing/${requested.body._id}`).expect(404);
@@ -93,4 +94,15 @@ test('commerce orders, requests, reviews, complaints, and administration are pro
   await request(app).post('/api/complaints').set('Authorization', `Bearer ${customer.body.token}`).send({ serviceRequestId: serviceRequest.body._id, reason: 'Need a schedule update.' }).expect(201);
   await request(app).get('/api/admin/commerce').set('Authorization', `Bearer ${customer.body.token}`).expect(403);
   await request(app).get('/api/admin/commerce/analytics').set('Authorization', `Bearer ${adminToken}`).expect(200).expect((response) => assert.ok(response.body.salesVolume >= 500));
+});
+
+test('edge cases return controlled errors without leaking private resources', async () => {
+  const member = await request(app).post('/api/auth/register').send({ name: 'Edge Case User', email: 'edge@example.com', password: 'securepass10', location: 'Chennai' }).expect(201);
+  await request(app).get('/api/clothing').expect(200).expect((response) => assert.ok(Array.isArray(response.body)));
+  await request(app).get('/api/clothing/not-an-id').expect(400).expect((response) => assert.equal(response.body.message, 'Invalid resource identifier.'));
+  await request(app).get('/api/swaps').set('Authorization', 'Bearer malformed.token').expect(401);
+  await request(app).post('/api/auth/login').send({ email: 'edge@example.com', password: 'incorrect-password' }).expect(401);
+  await request(app).post('/api/clothing').set('Authorization', `Bearer ${member.body.token}`).send({ title: '', type: 'Shirt' }).expect(400);
+  await request(app).post('/api/messages/000000000000000000000000').set('Authorization', `Bearer ${member.body.token}`).send({ text: 'Hello' }).expect(404);
+  await request(app).post('/api/messages/000000000000000000000000').set('Authorization', `Bearer ${member.body.token}`).send({ text: '' }).expect(404);
 });

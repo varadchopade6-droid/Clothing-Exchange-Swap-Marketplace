@@ -11,7 +11,7 @@ export async function createSwap(req, res, next) {
     if (!offeredItem || !requestedItem) return res.status(400).json({ message: 'Choose an offered item and requested item.' });
     if (offeredItem === requestedItem) return res.status(400).json({ message: 'You cannot swap an item for itself.' });
     const [offered, requested] = await Promise.all([Clothing.findById(offeredItem), Clothing.findById(requestedItem)]);
-    if (!offered || !requested || offered.status === 'removed' || requested.status !== 'available') return res.status(400).json({ message: 'One or both selected listings are unavailable.' });
+    if (!offered || !requested || offered.status !== 'available' || requested.status !== 'available') return res.status(400).json({ message: 'One or both selected listings are unavailable.' });
     if (offered.owner.toString() !== req.user.id) return res.status(403).json({ message: 'You may only offer your own listing.' });
     if (requested.owner.toString() === req.user.id) return res.status(400).json({ message: 'Choose another member’s item to request.' });
     const duplicate = await SwapRequest.exists({ requester: req.user.id, offeredItem, requestedItem, status: 'pending' });
@@ -48,7 +48,17 @@ export async function transitionSwap(req, res, next) {
     }
     swap.status = { accept: 'accepted', reject: 'rejected', cancel: 'cancelled', agree: 'agreed', start: 'in_progress', complete: 'completed' }[action];
     await swap.save();
-    if (action === 'accept') await Clothing.updateMany({ _id: { $in: [swap.offeredItem, swap.requestedItem] } }, { status: 'pending' });
+    if (action === 'accept') {
+      const itemIds = [swap.offeredItem, swap.requestedItem];
+      await Clothing.updateMany({ _id: { $in: itemIds } }, { status: 'pending' });
+      // Once an exchange is accepted, neither item can remain available for a
+      // competing pending request. Keep those requests as history rather than
+      // leaving recipients with an offer they can never accept.
+      await SwapRequest.updateMany(
+        { _id: { $ne: swap.id }, status: 'pending', $or: [{ offeredItem: { $in: itemIds } }, { requestedItem: { $in: itemIds } }] },
+        { status: 'cancelled' }
+      );
+    }
     if (action === 'complete') await Clothing.updateMany({ _id: { $in: [swap.offeredItem, swap.requestedItem] } }, { status: 'swapped' });
     res.json(await populated(SwapRequest.findById(swap.id)));
   } catch (error) { next(error); }
